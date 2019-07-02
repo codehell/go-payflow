@@ -1,65 +1,54 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"log"
-	"net/http"
-
 	"cloud.google.com/go/firestore"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/render"
+	"context"
+	"encoding/base64"
+	"github.com/gin-gonic/gin"
 	"google.golang.org/api/iterator"
+	"log"
 )
 
 // ProjectID name of the project
 const ProjectID = "bookshelf-2019-3"
 
+var ctx = context.Background()
+
 func main() {
-	ctx := context.Background()
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(render.SetContentType(render.ContentTypeJSON))
-
-	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("test"))
-	})
-
-	r.Get("/panic", func(w http.ResponseWriter, r *http.Request) {
-		panic("test panic")
-	})
-
-	r.Get("/user", func(w http.ResponseWriter, r *http.Request) {
-		user := User{
-			Username: "codehell",
-			Email:    "admin@codehell.net",
-		}
-		_ = render.Render(w, r, user)
-	})
-
-	r.Get("/restaurants", func(w http.ResponseWriter, r *http.Request) {
-		client, err := firestore.NewClient(ctx, ProjectID)
+	r := gin.Default()
+	r.GET("/decode/:token", func(c *gin.Context) {
+		encoded := c.Params.ByName("token")
+		decoded, err := base64.StdEncoding.DecodeString(encoded)
 		if err != nil {
-			log.Fatalf("Failed to create client: %v", err)
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
 		}
-		var arry []map[string]interface{}
-		col := client.Collection("restaurants")
-		iter := col.Documents(ctx)
-		for {
-			dr, err := iter.Next()
-			if err == iterator.Done {
-				break
-			}
-			if dr != nil {
-				arry = append(arry, dr.Data())
-			}
-		}
-		res, _ := json.Marshal(arry)
-		w.Header().Add("content-type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(res)
+
+		c.JSON(200, gin.H{
+			"result": string(decoded),
+		})
 	})
-	log.Fatal(http.ListenAndServe(":8080", r))
+	r.GET("/restaurants", getRestaurants)
+	_ = r.Run()
+}
+
+func getRestaurants(c *gin.Context) {
+	client, err := firestore.NewClient(ctx, ProjectID)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	var arry []map[string]interface{}
+	col := client.Collection("restaurants")
+	iter := col.Documents(ctx)
+	for {
+		dr, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if dr != nil {
+			arry = append(arry, dr.Data())
+		}
+	}
+	c.JSON(200, arry)
 }
