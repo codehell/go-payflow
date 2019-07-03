@@ -10,7 +10,7 @@ import (
 )
 
 // ProjectID name of the project
-const ProjectID = "bookshelf-2019-3"
+const ProjectID = "go-payflow"
 
 var ctx = context.Background()
 
