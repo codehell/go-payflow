@@ -5,25 +5,40 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/sessions"
 	"google.golang.org/api/iterator"
 )
 
 // ProjectID name of the project
-const ProjectID = "bookshelf-2019-3"
+const ProjectID = "go-payflow"
+
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
 func main() {
 	ctx := context.Background()
 	r := chi.NewRouter()
+
+	csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"))
+
 	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	// r.Use(middleware.Recoverer)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+	r.Use(csrfMiddleware)
 
 	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+		session, _ := store.Get(r, "session-name")
+		// Set some session values.
+		session.Values["foo"] = "bar"
+		session.Values[42] = 43
+		// Save it before we write to the response/return from the handler.
+		session.Save(r, w)
 		_, _ = w.Write([]byte("test"))
 	})
 
@@ -32,6 +47,7 @@ func main() {
 	})
 
 	r.Get("/user", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-CRSF-Token", csrf.Token(r))
 		user := User{
 			Username: "codehell",
 			Email:    "admin@codehell.net",

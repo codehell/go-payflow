@@ -2,3 +2,46 @@ runtime: go112
 
 env_variables:
   GCP_ENVIRONMENT: "production"
+
+handlers:
+- url: /
+  static_files: www/index.html
+  upload: www/index.html
+  secure: always
+
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: www/favicon.ico
+  secure: always
+
+- url: /service-worker.js
+  static_files: www/service-worker.js
+  upload: www/service-worker.js
+  secure: always
+
+- url: /robots.txt
+  static_files: www/robots.txt
+  upload: www/robots.txt
+  secure: always
+
+- url: /manifest.json
+  static_files: www/manifest.json
+  upload: www/manifest.json
+  secure: always
+
+- url: /css
+  static_dir: www/css
+  secure: always
+
+- url: /js
+  static_dir: www/js
+  secure: always
+
+- url: /img
+  static_dir: www/img
+  secure: always
+
+- url: /.*
+  redirect_http_response_code: 301
+  script: auto
+  secure: always
