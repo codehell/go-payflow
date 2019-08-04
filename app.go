@@ -2,49 +2,112 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/sessions"
 	"google.golang.org/api/iterator"
 )
 
 // ProjectID name of the project
 const ProjectID = "go-payflow"
 
-var ctx = context.Background()
+var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
-func main() {
-	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	options := sessions.Options{HttpOnly: true}
-	store.Options(options)
-	r.Use(sessions.Sessions("mysession", store))
-
-	r.Use(csrf.Middleware(csrf.Options{
-		Secret: "secret123",
-		ErrorFunc: func(c *gin.Context) {
-			c.String(400, "CSRF token mismatch")
-			c.Abort()
-		},
-	}))
-
-	r.GET("/decode/:token", decodeToken)
-	r.GET("/restaurants", getRestaurants)
-	r.GET("/tests", tests)
-	_ = r.Run()
+type documentID struct {
+	ID string `json:"documentId"`
 }
 
-func getRestaurants(c *gin.Context) {
+type Restaurant struct {
+	Name string `json:"name"`
+}
+
+func (res Restaurant) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+func SetJsonContentType (next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func main() {
+	r := chi.NewRouter()
+	isProduction := os.Getenv("GCP_ENVIRONMENT") == "production"
+	csrfOption := csrf.Secure(isProduction)
+	csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"), csrfOption)
+
+	r.Use(middleware.Logger)
+	r.Use(SetJsonContentType)
+	r.Use(csrfMiddleware)
+
+	r.Get("/api/test", func(w http.ResponseWriter, r *http.Request) {
+		session, _ := store.Get(r, "session-name")
+		// Set some session values.
+		session.Values["foo"] = "bar"
+		session.Values[42] = 43
+		// Save it before we write to the response/return from the handler.
+		_ = session.Save(r, w)
+		_, _ = w.Write([]byte("test"))
+	})
+
+	r.Get("/api/crsf", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-CRSF-Token", csrf.Token(r))
+		_, _ = w.Write([]byte(""))
+	})
+
+	r.Post("/api/restaurants", storeRestaurants)
+
+	r.Get("/api/restaurants", getRestaurants)
+
+	r.Post("/api/users", func(w http.ResponseWriter, r *http.Request) {
+		var user User
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			Error(w, "error: decode user data", "errDecodeUser", 500)
+			return
+		}
+		user.Role = UserRoleUser
+		user.CreateAt = time.Now().Unix()
+		id, err := user.SetUser()
+		if err != nil {
+			Error(w, err.Error(), "errSetUser", 500)
+			return
+		}
+		docID := documentID{
+			ID: id,
+		}
+		jDocID, err := json.Marshal(docID)
+		if err != nil {
+			Error(w, err.Error(), "errMarshalUserID,", 500)
+			return
+		}
+		_, _ = w.Write(jDocID)
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func getRestaurants(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("X-CRSF-Token", csrf.Token(r))
+	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, ProjectID)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		log.Println("an error has ocurred")
+		Error(w, "wtf Restaurants", "where are my restaurants", 500)
+		return
 	}
-	var arry []map[string]interface{}
+	var arry []Restaurant
 	col := client.Collection("restaurants")
 	iter := col.Documents(ctx)
 	for {
@@ -53,37 +116,31 @@ func getRestaurants(c *gin.Context) {
 			break
 		}
 		if dr != nil {
-			arry = append(arry, dr.Data())
+			nameInter := dr.Data()["name"]
+			name := fmt.Sprintf("%v", nameInter)
+			arry = append(arry, Restaurant{Name:name})
 		}
 	}
-	c.JSON(200, arry)
+	res, _ := json.Marshal(arry)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(res)
 }
 
-func tests(c *gin.Context) {
-	session := sessions.Default(c)
-	var count int
-	v := session.Get("count")
-	if v == nil {
-		count = 0
-	} else {
-		count = v.(int)
-		count++
-	}
-	session.Set("count", count)
-	session.Save()
-	c.JSON(200, gin.H{"count": count})
+func storeRestaurants(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]string)
+	data["hello"] = "world"
+	jData, _ := json.Marshal(data)
+	_, _ = w.Write(jData)
 }
 
-func decodeToken(c *gin.Context) {
-	encoded := c.Params.ByName("token")
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-	}
-
-	c.JSON(200, gin.H{
-		"result": string(decoded),
-	})
+// Error Application error responses constructor
+func Error(w http.ResponseWriter, description string, code string, httpCode int) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	appErr := make(map[string]string)
+	appErr["code"] = code
+	appErr["description"] = description
+	jError, _ := json.Marshal(appErr)
+	w.WriteHeader(httpCode)
+	_, _ = w.Write(jError)
 }

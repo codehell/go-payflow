@@ -2,3 +2,18 @@ runtime: go112
 
 env_variables:
   GCP_ENVIRONMENT: "production"
+
+handlers:
+- url: /
+  static_files: www/index.html
+  upload: www/index.html
+  secure: always
+
+- url: /api/.*
+  redirect_http_response_code: 301
+  script: auto
+  secure: always
+  
+- url: /(.*)
+  static_files: www/\1
+  upload: www/(.*)
