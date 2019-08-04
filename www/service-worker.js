@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.a82609d40da853941dd9a08548307aeb.js"
+  "/precache-manifest.788ac916420040bbc02c343790410fda.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "vue_payflow"});
