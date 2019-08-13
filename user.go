@@ -1,18 +1,20 @@
 package main
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
 	"errors"
+
+	"cloud.google.com/go/firestore"
 )
 
+// UserRole is type for user roles
 type UserRole int
 
 const (
-	UserRoleAdmin UserRole = iota + 1
-	UserRoleEditor
-	UserRoleReader
-	UserRoleUser
+	userRoleAdmin UserRole = iota + 1
+	userRoleEditor
+	userRoleReader
+	userRoleUser
 )
 
 // User is the struct for the application users
@@ -24,9 +26,9 @@ type User struct {
 }
 
 // SetUser save an user at firestore
-func (u *User) SetUser() (string, error) {
+func (u *User) SetUser(projectID string) (string, error) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, ProjectID)
+	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		return "", errors.New("firestoreNewClient")
 	}
