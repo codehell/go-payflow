@@ -14,9 +14,9 @@ type PayflowNotification struct {
 	SignatureDataReturn string `json:"signatureDataReturn"`
 }
 
-func SetPayflowNotification(w http.ResponseWriter, r *http.Request) {
+func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(1 * time.Second)
-	if true {
+	if false {
 		APIResponse(w, "error: add payflow document", "errTimeout", http.StatusGatewayTimeout)
 		return
 	}
@@ -45,6 +45,10 @@ func SetPayflowNotification(w http.ResponseWriter, r *http.Request) {
 	APIResponse(w, "cool", "200", http.StatusOK)
 }
 
-func GetPayflowNotifications(w http.ResponseWriter, r *http.Request) {
+func getPayflowNotifications(w http.ResponseWriter, r *http.Request) {
 	APIResponse(w, "cool", "200", http.StatusOK)
+}
+
+func testErrorResponse(w http.ResponseWriter, r *http.Request) {
+	APIResponse(w, "test response for api", "500", http.StatusInternalServerError)
 }

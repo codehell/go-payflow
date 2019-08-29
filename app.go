@@ -8,11 +8,12 @@ import (
 	"os"
 	"time"
 
+	"go_firestore/point"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
-	"go_firestore/point"
 )
 
 // ProjectID name of the project
@@ -27,8 +28,9 @@ func main() {
 	r.Use(SetJSONContentType)
 
 	// Api Payflow
-	r.Get("/api/payflow", GetPayflowNotifications)
-	r.Post("/api/payflow", SetPayflowNotification)
+	r.Get("/api/payflow", getPayflowNotifications)
+	r.Post("/api/payflow", setPayflowNotification)
+	r.Post("/api/test/error/response", testErrorResponse)
 
 	r.Get("/api/test", func(w http.ResponseWriter, r *http.Request) {
 		session, _ := store.Get(r, "session-name")
