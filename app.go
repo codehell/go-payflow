@@ -56,13 +56,12 @@ func main() {
 	r.Group(func(r chi.Router) {
 		isProduction := os.Getenv("GCP_ENVIRONMENT") == "production"
 		csrfOption := csrf.Secure(isProduction)
-		csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key"), csrfOption)
+		csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key2224262930x"), csrfOption)
 
 		r.Use(csrfMiddleware)
 
 		r.Get("/api/crsf", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-CRSF-Token", csrf.Token(r))
-			_, _ = w.Write([]byte(""))
 		})
 
 		r.Post("/api/users", func(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +84,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(":8081", r))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
