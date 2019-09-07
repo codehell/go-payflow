@@ -31,7 +31,7 @@ func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.Background()
 
-	client, err := firestore.NewClient(ctx, ProjectID)
+	client, err := firestore.NewClient(ctx, projectID)
 	defer client.Close()
 	if err != nil {
 		APIResponse(w, "error: create firestore client", "badFirestoreClient", http.StatusBadRequest)

@@ -3,23 +3,41 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"go_firestore/point"
-
+	"github.com/codehell/go_firestore/point"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
+	"gopkg.in/yaml.v2"
 )
 
-// ProjectID name of the project
-const ProjectID = "go-payflow"
+var (
+	appConfig AppConfig
+	projectID string
+	store     *sessions.CookieStore
+)
 
-var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+func init() {
+	body, err := ioutil.ReadFile("conf.yaml")
+	if err != nil {
+		log.Fatal("unable to read file")
+	}
+
+	err = yaml.Unmarshal(body, &appConfig)
+	if err != nil {
+		log.Fatal("unable to unmarshal file")
+	}
+
+	projectID = appConfig.ProjectID
+	store = sessions.NewCookieStore([]byte(appConfig.Key))
+	log.Printf("Config: %v", appConfig)
+}
 
 func main() {
 	r := chi.NewRouter()
@@ -56,7 +74,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		isProduction := os.Getenv("GCP_ENVIRONMENT") == "production"
 		csrfOption := csrf.Secure(isProduction)
-		csrfMiddleware := csrf.Protect([]byte("32-byte-long-auth-key2224262930x"), csrfOption)
+		csrfMiddleware := csrf.Protect([]byte(appConfig.Key), csrfOption)
 
 		r.Use(csrfMiddleware)
 
@@ -73,7 +91,7 @@ func main() {
 			}
 			user.Role = userRoleUser
 			user.CreateAt = time.Now().Unix()
-			id, err := user.SetUser(ProjectID)
+			id, err := user.SetUser(projectID)
 			if err != nil {
 				APIResponse(w, err.Error(), "errSetUser", 500)
 				return
