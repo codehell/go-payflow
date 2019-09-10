@@ -2,25 +2,24 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/codehell/go_firestore/point"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
-	"github.com/gorilla/sessions"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	appConfig AppConfig
-	projectID string
-	store     *sessions.CookieStore
+	appConfig      AppConfig
+	projectID      string
+	sessionManager *scs.SessionManager
 )
 
 func init() {
@@ -35,13 +34,14 @@ func init() {
 	}
 
 	projectID = appConfig.ProjectID
-	store = sessions.NewCookieStore([]byte(appConfig.Key))
 	log.Printf("Config: %v", appConfig)
 }
 
 func main() {
 	r := chi.NewRouter()
 
+	sessionManager = scs.New()
+	sessionManager.Lifetime = 24 * time.Hour
 	r.Use(middleware.Logger)
 	r.Use(SetJSONContentType)
 
@@ -50,16 +50,8 @@ func main() {
 	r.Post("/api/payflow", setPayflowNotification)
 	r.Post("/api/test/error/response", testErrorResponse)
 
-	r.Get("/api/test", func(w http.ResponseWriter, r *http.Request) {
-		session, _ := store.Get(r, "session-name")
-		// Set some session values.
-		session.Values["foo"] = "bar"
-		session.Values[42] = 43
-		// Save it before we write to the response/return from the handler.
-		_ = session.Save(r, w)
-		fooSession := session.Values["foo"]
-		fs := fmt.Sprintf("%v", fooSession)
-		fmt.Println(fs)
+	r.Get("/api/set-session", func(w http.ResponseWriter, r *http.Request) {
+		sessionManager.Put(r.Context(), "message", "Hello from a session!")
 		pa := point.Point{
 			X: 10,
 			Y: 7,
@@ -69,6 +61,11 @@ func main() {
 			APIResponse(w, "error: i am dumb sorry", "imDumb", 500)
 		}
 		_, _ = w.Write(jPoint)
+	})
+
+	r.Get("/api/get-session", func(w http.ResponseWriter, r *http.Request) {
+		msg := sessionManager.GetString(r.Context(), "message")
+		APIResponse(w, "sessionData", msg, http.StatusOK)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -102,5 +99,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8080", sessionManager.LoadAndSave(r)))
 }
