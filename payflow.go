@@ -15,7 +15,7 @@ type PayflowNotification struct {
 }
 
 func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	if true {
 		APIResponse(w, "error: add payflow document", "errTimeout", http.StatusGatewayTimeout)
 		return
@@ -25,7 +25,7 @@ func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
 		APIResponse(w, "error: add payflow document", "errParseForm", http.StatusBadRequest)
 		return
 	}
-	not := PayflowNotification{
+	notification := PayflowNotification{
 		r.Form.Get("dataReturn"),
 		r.Form.Get("signatureDataReturn"),
 	}
@@ -37,7 +37,7 @@ func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
 		APIResponse(w, "error: create firestore client", "badFirestoreClient", http.StatusBadRequest)
 		return
 	}
-	_, _, err = client.Collection("payflow").Add(ctx, not)
+	_, _, err = client.Collection("payflow").Add(ctx, notification)
 	if err != nil {
 		APIResponse(w, "error: add payflow document", "badFirestoreDoc", http.StatusBadRequest)
 		return
@@ -47,8 +47,4 @@ func setPayflowNotification(w http.ResponseWriter, r *http.Request) {
 
 func getPayflowNotifications(w http.ResponseWriter, r *http.Request) {
 	APIResponse(w, "cool", "200", http.StatusOK)
-}
-
-func testErrorResponse(w http.ResponseWriter, r *http.Request) {
-	APIResponse(w, "test response for api", "500", http.StatusInternalServerError)
 }

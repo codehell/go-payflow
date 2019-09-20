@@ -32,11 +32,11 @@ func (u *User) SetUser(projectID string) (string, error) {
 	if err != nil {
 		return "", errors.New("firestoreNewClient")
 	}
+	defer client.Close()
 	ref, _, err := client.Collection("users").Add(ctx, u)
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
 	return ref.ID, nil
 }
 

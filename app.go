@@ -34,7 +34,6 @@ func init() {
 	}
 
 	projectID = appConfig.ProjectID
-	log.Printf("Config: %v", appConfig)
 }
 
 func main() {
@@ -48,7 +47,6 @@ func main() {
 	// Api Payflow
 	r.Get("/api/payflow", getPayflowNotifications)
 	r.Post("/api/payflow", setPayflowNotification)
-	r.Post("/api/test/error/response", testErrorResponse)
 
 	r.Get("/api/set-session", func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Put(r.Context(), "message", "Hello from a session!")
@@ -68,6 +66,10 @@ func main() {
 		APIResponse(w, "sessionData", msg, http.StatusOK)
 	})
 
+	r.Get("/api/ping", func(w http.ResponseWriter, r *http.Request) {
+		APIResponse(w, "pong", "testResponse", http.StatusOK)
+	})
+
 	r.Group(func(r chi.Router) {
 		isProduction := os.Getenv("GCP_ENVIRONMENT") == "production"
 		csrfOption := csrf.Secure(isProduction)
@@ -76,6 +78,7 @@ func main() {
 		r.Use(csrfMiddleware)
 
 		r.Get("/api/crsf", func(w http.ResponseWriter, r *http.Request) {
+			sessionManager.Put(r.Context(), "message", "Hello from a session!")
 			w.Header().Set("X-CRSF-Token", csrf.Token(r))
 		})
 
