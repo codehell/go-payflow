@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"encoding/json"
@@ -19,4 +19,10 @@ func APIResponse(w http.ResponseWriter, description string, code string, httpCod
 	}
 	w.WriteHeader(httpCode)
 	_, _ = w.Write(jsonResponse)
+}
+
+func ProjectIDSetter(arg string) func(f func(string) http.HandlerFunc) http.HandlerFunc {
+	return func(f func(string) http.HandlerFunc) http.HandlerFunc {
+		return f(arg)
+	}
 }

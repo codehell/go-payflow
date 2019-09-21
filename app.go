@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/codehell/go_firestore/payflow"
+	"github.com/codehell/go_firestore/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -38,15 +40,15 @@ func init() {
 
 func main() {
 	r := chi.NewRouter()
-
+	sf := utils.ProjectIDSetter(projectID)
 	sessionManager = scs.New()
 	sessionManager.Lifetime = 24 * time.Hour
 	r.Use(middleware.Logger)
 	r.Use(SetJSONContentType)
 
 	// Api Payflow
-	r.Get("/api/payflow", getPayflowNotifications)
-	r.Post("/api/payflow", setPayflowNotification)
+	r.Get("/api/payflow", sf(payflow.GetPayflowNotification))
+	r.Post("/api/payflow", sf(payflow.SetPayflowNotification))
 
 	r.Get("/api/set-session", func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Put(r.Context(), "message", "Hello from a session!")
@@ -56,18 +58,18 @@ func main() {
 		}
 		jPoint, err := json.Marshal(pa)
 		if err != nil {
-			APIResponse(w, "error: i am dumb sorry", "imDumb", 500)
+			utils.APIResponse(w, "error: i am dumb sorry", "imDumb", 500)
 		}
 		_, _ = w.Write(jPoint)
 	})
 
 	r.Get("/api/get-session", func(w http.ResponseWriter, r *http.Request) {
 		msg := sessionManager.GetString(r.Context(), "message")
-		APIResponse(w, "sessionData", msg, http.StatusOK)
+		utils.APIResponse(w, "sessionData", msg, http.StatusOK)
 	})
 
 	r.Get("/api/ping", func(w http.ResponseWriter, r *http.Request) {
-		APIResponse(w, "pong", "testResponse", http.StatusOK)
+		utils.APIResponse(w, "pong", "testResponse", http.StatusOK)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -86,19 +88,19 @@ func main() {
 			var user User
 			err := json.NewDecoder(r.Body).Decode(&user)
 			if err != nil {
-				APIResponse(w, "error: decode user data", "errDecodeUser", 500)
+				utils.APIResponse(w, "error: decode user data", "errDecodeUser", 500)
 				return
 			}
 			user.Role = userRoleUser
 			user.CreateAt = time.Now().Unix()
 			id, err := user.SetUser(projectID)
 			if err != nil {
-				APIResponse(w, err.Error(), "errSetUser", 500)
+				utils.APIResponse(w, err.Error(), "errSetUser", 500)
 				return
 			}
 
 			description := "User added: " + id
-			APIResponse(w, description, "userAdded", http.StatusCreated)
+			utils.APIResponse(w, description, "userAdded", http.StatusCreated)
 		})
 	})
 

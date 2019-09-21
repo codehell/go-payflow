@@ -5,18 +5,18 @@ env_variables:
 
 handlers:
 - url: /api/.*
-  #redirect_http_response_code: 301
+  redirect_http_response_code: 301
   script: auto
-  #secure: always
+  secure: always
 
 - url: /.*
   static_files: www/index.html
-  #redirect_http_response_code: 301
+  redirect_http_response_code: 301
   upload: www/index.html
-  #secure: always
+  secure: always
   
 - url: /(.*)
   static_files: www/\1
-  #redirect_http_response_code: 301
+  redirect_http_response_code: 301
   upload: www/(.*)
-  #secure: always
+  secure: always
