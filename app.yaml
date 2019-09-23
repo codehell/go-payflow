@@ -4,19 +4,19 @@ env_variables:
   GCP_ENVIRONMENT: "production"
 
 handlers:
-- url: /api/.*
+- url: /api/(.*)
   redirect_http_response_code: 301
   script: auto
   secure: always
 
-- url: /.*
+- url: /(.*\..*)
+  static_files: www/\1
+  #redirect_http_response_code: 301
+  upload: www/(.*)
+  #secure: always
+
+- url: /(.*)
   static_files: www/index.html
   redirect_http_response_code: 301
   upload: www/index.html
-  secure: always
-  
-- url: /(.*)
-  static_files: www/\1
-  redirect_http_response_code: 301
-  upload: www/(.*)
   secure: always

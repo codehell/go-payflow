@@ -14,10 +14,10 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.788ac916420040bbc02c343790410fda.js"
+  "/precache-manifest.3390b107c35ee4ee2bb5ace996792420.js"
 );
 
-workbox.core.setCacheNameDetails({prefix: "vue_payflow"});
+workbox.core.setCacheNameDetails({prefix: "vue_firestore"});
 
 /**
  * The workboxSW.precacheAndRoute() method efficiently caches and responds to
