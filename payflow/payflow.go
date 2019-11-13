@@ -16,8 +16,8 @@ type PayflowNotification struct {
 }
 
 func SetPayflowNotification(pid string) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
-		time.Sleep(3 * time.Second)
+	return func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(5 * time.Second)
 		if false {
 			utils.APIResponse(w, "error: add payflow document", "errTimeout", http.StatusGatewayTimeout)
 			return

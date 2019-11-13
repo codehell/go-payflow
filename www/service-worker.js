@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.3390b107c35ee4ee2bb5ace996792420.js"
+  "/precache-manifest.a8d4ca747b2711e5d115697a0c04775b.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "vue_firestore"});

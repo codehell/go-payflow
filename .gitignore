@@ -1,5 +1,4 @@
 .vscode
 .idea
-conf.go
 conf_dev.yaml
 conf.yaml

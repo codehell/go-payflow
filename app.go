@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/codehell/go_firestore/payflow"
+	"github.com/codehell/go_firestore/users"
 	"github.com/codehell/go_firestore/utils"
 	"io/ioutil"
 	"log"
@@ -79,28 +80,12 @@ func main() {
 
 		r.Use(csrfMiddleware)
 
-		r.Get("/api/crsf", func(w http.ResponseWriter, r *http.Request) {
-			sessionManager.Put(r.Context(), "message", "Hello from a session!")
-			w.Header().Set("X-CRSF-Token", csrf.Token(r))
+		r.Get("/api/csrf", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-CSRF-Token", csrf.Token(r))
 		})
 
 		r.Post("/api/users", func(w http.ResponseWriter, r *http.Request) {
-			var user User
-			err := json.NewDecoder(r.Body).Decode(&user)
-			if err != nil {
-				utils.APIResponse(w, "error: decode user data", "errDecodeUser", 500)
-				return
-			}
-			user.Role = userRoleUser
-			user.CreateAt = time.Now().Unix()
-			id, err := user.SetUser(projectID)
-			if err != nil {
-				utils.APIResponse(w, err.Error(), "errSetUser", 500)
-				return
-			}
-
-			description := "User added: " + id
-			utils.APIResponse(w, description, "userAdded", http.StatusCreated)
+			users.PostUser(projectID, w, r)
 		})
 	})
 
