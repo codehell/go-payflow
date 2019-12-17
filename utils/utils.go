@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+type StringHandler func(f func(string) http.HandlerFunc) http.HandlerFunc
+
 // APIResponse Application error responses constructor
 func APIResponse(w http.ResponseWriter, description string, code string, httpCode int) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -21,7 +23,7 @@ func APIResponse(w http.ResponseWriter, description string, code string, httpCod
 	_, _ = w.Write(jsonResponse)
 }
 
-func ProjectIDSetter(arg string) func(f func(string) http.HandlerFunc) http.HandlerFunc {
+func StringHandlerFunc(arg string) StringHandler {
 	return func(f func(string) http.HandlerFunc) http.HandlerFunc {
 		return f(arg)
 	}

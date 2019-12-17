@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/codehell/go_firestore/config"
+	"github.com/codehell/go_firestore/middlewares"
 	"github.com/codehell/go_firestore/payflow"
 	"github.com/codehell/go_firestore/users"
 	"github.com/codehell/go_firestore/utils"
@@ -9,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -20,7 +23,7 @@ import (
 )
 
 var (
-	appConfig      AppConfig
+	appConfig      config.AppConfig
 	projectID      string
 	sessionManager *scs.SessionManager
 )
@@ -41,15 +44,18 @@ func init() {
 
 func main() {
 	r := chi.NewRouter()
-	sf := utils.ProjectIDSetter(projectID)
+	sf := utils.StringHandlerFunc(projectID)
 	sessionManager = scs.New()
 	sessionManager.Lifetime = 24 * time.Hour
 	r.Use(middleware.Logger)
-	r.Use(SetJSONContentType)
+	r.Use(middlewares.SetJSONContentType)
 
 	// Api Payflow
-	r.Get("/api/payflow", sf(payflow.GetPayflowNotification))
-	r.Post("/api/payflow", sf(payflow.SetPayflowNotification))
+	r.Get("/api/payflow", payflow.GetPayflowNotification(projectID))
+	r.Post("/api/payflow/ok", sf(payflow.SetPayflowOkUrl))
+	r.Post("/api/payflow/error", sf(payflow.SetPayflowErrorUrl))
+	r.Post("/api/payflow/notification", sf(payflow.SetPayflowNotification))
+	r.Post("/api/payflow/notification-error", sf(payflow.SetPayflowErrorNotification))
 
 	r.Get("/api/set-session", func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Put(r.Context(), "message", "Hello from a session!")
@@ -73,6 +79,10 @@ func main() {
 		utils.APIResponse(w, "pong", "testResponse", http.StatusOK)
 	})
 
+	r.Get("/api/version", func(w http.ResponseWriter, r *http.Request) {
+		utils.APIResponse(w, runtime.Version(), "version", http.StatusOK)
+	})
+
 	r.Group(func(r chi.Router) {
 		isProduction := os.Getenv("GCP_ENVIRONMENT") == "production"
 		csrfOption := csrf.Secure(isProduction)
@@ -89,5 +99,7 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", sessionManager.LoadAndSave(r)))
+	if err := http.ListenAndServe(":8080", sessionManager.LoadAndSave(r)); err != nil {
+		log.Fatal(err)
+	}
 }
