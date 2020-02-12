@@ -22,6 +22,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	ConfigFile = "conf.yaml"
+)
+
 var (
 	appConfig      config.AppConfig
 	projectID      string
@@ -29,7 +33,7 @@ var (
 )
 
 func init() {
-	body, err := ioutil.ReadFile("conf.yaml")
+	body, err := ioutil.ReadFile(ConfigFile)
 	if err != nil {
 		log.Fatal("unable to read file")
 	}
