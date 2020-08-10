@@ -2,11 +2,11 @@ package payflow
 
 import (
 	"context"
-	"github.com/codehell/go_firestore/utils"
 	"net/http"
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/codehell/notifiertester/utils"
 )
 
 // PayflowNotification struct
@@ -54,12 +54,12 @@ func commonPayflow(projectID string, withError bool) http.HandlerFunc {
 		}
 		_, _, err = client.Collection("payflow").Add(ctx, notification)
 		if err != nil {
-			utils.APIResponse(w, "error: add payflow document", "badFirestoreDoc", http.StatusBadRequest)
+			utils.APIResponse(w, err.Error(), "badFirestoreDoc", http.StatusBadRequest)
 			return
 		}
 		time.Sleep(2 * time.Second)
 		if withError {
-			utils.APIResponse(w, "error: mock error endpoint", "errTimeout", http.StatusInternalServerError)
+			utils.APIResponse(w, err.Error(), "errTimeout", http.StatusInternalServerError)
 			return
 		}
 		utils.APIResponse(w, "cool", "200", http.StatusOK)

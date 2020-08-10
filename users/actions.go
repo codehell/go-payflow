@@ -2,9 +2,10 @@ package users
 
 import (
 	"encoding/json"
-	"github.com/codehell/go_firestore/utils"
 	"net/http"
 	"time"
+
+	"github.com/codehell/notifiertester/utils"
 )
 
 func PostUser(projectID string, w http.ResponseWriter, r *http.Request) {

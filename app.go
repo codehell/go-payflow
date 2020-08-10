@@ -2,11 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/codehell/go_firestore/config"
-	"github.com/codehell/go_firestore/middlewares"
-	"github.com/codehell/go_firestore/payflow"
-	"github.com/codehell/go_firestore/users"
-	"github.com/codehell/go_firestore/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,8 +9,14 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/codehell/notifiertester/config"
+	"github.com/codehell/notifiertester/middlewares"
+	"github.com/codehell/notifiertester/payflow"
+	"github.com/codehell/notifiertester/users"
+	"github.com/codehell/notifiertester/utils"
+
 	"github.com/alexedwards/scs/v2"
-	"github.com/codehell/go_firestore/point"
+	"github.com/codehell/notifiertester/point"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
