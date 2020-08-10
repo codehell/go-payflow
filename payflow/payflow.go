@@ -17,22 +17,22 @@ type Notification struct {
 }
 
 func SetPayflowNotification(pid string) http.HandlerFunc {
-	return commonPayflow(pid, false)
+	return commonPayflow(pid, false, true)
 }
 
 func SetPayflowErrorNotification(pid string) http.HandlerFunc {
-	return commonPayflow(pid, true)
+	return commonPayflow(pid, true, true)
 }
 
 func SetPayflowOkUrl(pid string) http.HandlerFunc {
-	return commonPayflow(pid, false)
+	return commonPayflow(pid, false, false)
 }
 
 func SetPayflowErrorUrl(pid string) http.HandlerFunc {
-	return commonPayflow(pid, false)
+	return commonPayflow(pid, false, false)
 }
 
-func commonPayflow(projectID string, withError bool) http.HandlerFunc {
+func commonPayflow(projectID string, withError bool, isNotification bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
@@ -62,7 +62,11 @@ func commonPayflow(projectID string, withError bool) http.HandlerFunc {
 			utils.APIResponse(w, err.Error(), "errTimeout", http.StatusInternalServerError)
 			return
 		}
-		utils.APIResponse(w, "cool", "200", http.StatusOK)
+		if isNotification {
+			utils.APIResponse(w, "cool notification", "200", http.StatusOK)
+		} else {
+			utils.APIResponse(w, "cool ok", "200", http.StatusOK)
+		}
 	}
 }
 
