@@ -2,6 +2,10 @@ package payflow
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -39,10 +43,17 @@ func commonPayflow(projectID string, withError bool, isNotification bool) http.H
 			utils.APIResponse(w, "error: add payflow document", "errParseForm", http.StatusBadRequest)
 			return
 		}
+		dataReturn := r.Form.Get("dataReturn")
+		signatureDataReturn := r.Form.Get("signatureDataReturn")
 		notification := Notification{
-			r.Form.Get("dataReturn"),
-			r.Form.Get("signatureDataReturn"),
+			dataReturn,
+			signatureDataReturn,
 			time.Now().UTC().Unix(),
+		}
+
+		if !ValidMAC(dataReturn, signatureDataReturn) {
+			utils.APIResponse(w, "no match", "403", http.StatusForbidden)
+			return
 		}
 		ctx := context.Background()
 
@@ -74,4 +85,17 @@ func GetPayflowNotification(pid string) http.HandlerFunc {
 	return func(w http.ResponseWriter, request *http.Request) {
 		utils.APIResponse(w, pid, "200", http.StatusOK)
 	}
+}
+
+func ValidMAC(data, signature string) bool {
+	key := "QZmmEPJ5yF8NrSDVp5ZWG9id699gztESanlphh9s"
+	h := hmac.New(sha256.New, []byte(key))
+
+	// Write Data to it
+	_, _ = h.Write([]byte(data))
+
+	// Get result and encode as hexadecimal string
+	sha := hex.EncodeToString(h.Sum(nil))
+	shaB64 := base64.StdEncoding.EncodeToString([]byte(sha))
+	return string(shaB64) == signature
 }
